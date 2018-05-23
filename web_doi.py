@@ -1,8 +1,31 @@
 import dataset
-from datacite import schema40
-import os, datetime
+import requests
+from datacite import DataCiteMDSClient, schema40
+import subprocess, os, datetime
 
-new=True
+def send_simple_message(token,email,doi,url):
+    return requests.post(
+        "https://api.mailgun.net/v3/notices.caltechlibrary.org/messages",
+        auth=("api", token),
+        files=[("inline", open("CaltechLibraryLogo.gif",'rb'))],
+        data={"from": "Caltech Library Notices <mail@notices.caltechlibrary.org>",
+              "to": email+" <"+email+">",
+              "subject": "Your Requested Website DOI is Available",
+              "html": '<html> <center> <img src="cid:CaltechLibraryLogo.gif"\
+                      alt="Caltech Library Logo"> </center> \
+                      <p> Hello, </p>\
+                      <p>You requested a DOI for the web site "'+url+'".\
+                      This web site has been successfuly archived and a DOI\
+                      has been generated: \
+                      <a href="https://doi.org/'+doi+'">'+doi+'</a>.</p>\
+                      <p> Best, </p><p>Caltech Library</p><hr>\
+                      <p> See an issue?  Let us know at\
+                      <a href="mailto:library@caltech.edu?Subject=Issue%20with%20web%20archive%20'\
+                      +doi+'">library@caltech.edu</a></p>\
+                      <P> This email was sent by the Caltech Library, \
+                      1200 East California Blvd., MC 1-43, Pasadena, CA 91125, USA </p> </html>'})
+
+new=False
 
 now = datetime.datetime.now()
 
@@ -46,12 +69,12 @@ for key in dataset.keys(collection):
             orcid_list = inputv['orcid'].split(';')
             for aindex in range(len(alist)):
                 author = {}
-                author['creatorName'] = alist[aindex]
+                author['creatorName'] = alist[aindex].strip()
                 if len(aff_list) > aindex:
-                    author['affiliations'] = [aff_list[aindex]]
+                    author['affiliations'] = [aff_list[aindex].strip()]
                 if len(orcid_list) > aindex:
                     author['nameIdentifiers'] = [{'nameIdentifier':
-                        orcid_list[aindex],'nameIdentifierScheme':'ORCID'}]
+                        orcid_list[aindex].strip(),'nameIdentifierScheme':'ORCID'}]
                 authors.append(author)
             metadata['creators'] = authors
             if inputv['license'] != '':
@@ -64,17 +87,47 @@ for key in dataset.keys(collection):
                     'resourceType':'Website'}
             metadata['publicationYear'] = str(now.year)
             metadata['publisher'] = 'Caltech Library'
+
+            #Get the prefix to use
+            prefix = inputv['prefix'].split('(')[1].split(')')[0]
+            #prefix = '10.5072'
+
+            #Get our DataCite password
+            infile = open('pw','r')
+            password = infile.readline().strip()
+
+            # Initialize the MDS client.
+            d = DataCiteMDSClient(
+            username='CALTECH.LIBRARY',
+            password=password,
+            prefix=prefix,
+            #test_mode=True
+            )
+
+            doi_end =subprocess.check_output(['../gen-cool-doi'],universal_newlines=True)
+            identifier = str(prefix)+'/'+str(doi_end)
+
+            metadata['identifier'] = {'identifier':identifier,'identifierType':'DOI'}
+
+            assert schema40.validate(metadata)
+            #Debugging if this fails
+            #v = schema40.validator.validate(metadata)
+            #errors = sorted(v.iter_errors(instance), key=lambda e: e.path)
+            #for error in errors:
+            #    print(error.message)
+
+            xml = schema40.tostring(metadata)
+            d.metadata_post(xml)
+            d.doi_post(identifier,inputv['url'])
+            print('Completed')
+
+            token = os.environ['MAILTOK']
+
+            email = inputv['email']
+            url = inputv['url']
+
+            send_simple_message(token,email,identifier,url)
+            
+
         else:
             print("Web archiving is not complete for "+inputv['title'])
-    
-    metadata['identifier'] = {'identifier':'10.1/1','identifierType':'DOI'}
-
-    assert schema40.validate(metadata)
-    #Debugging if this fails
-    #v = schema40.validator.validate(metadata)
-    #errors = sorted(v.iter_errors(instance), key=lambda e: e.path)
-    #for error in errors:
-    #    print(error.message)
-
-    xml = schema40.tostring(metadata)
-
