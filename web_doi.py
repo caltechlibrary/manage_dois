@@ -127,6 +127,7 @@ for key in dataset.keys(collection):
             url = inputv['url']
 
             send_simple_message(token,email,identifier,url)
+ 
             
 
         else:

@@ -9,8 +9,11 @@ Python 3 (Recommended via [Anaconda](https://www.anaconda.com/download)) with [r
 base32-url from DataCite.  You can install this ruby gem on a modern Mac by
 typing 'sudo gem install -n /usr/local/bin base32-url'
 
-## Archived Websites
+Set your DataCite password by making a file 'pw' under the directory 'data'
 
--web_doi.py - Search google sheet for archived web sites that need DOIs
+## DOIs for Web Sites
 
+- web_doi.py - Search google sheet for archived web sites that need DOIs
+- static_content.py - Takes a CaltechDATA id and url for the web view of an
+  interactive resource stored in CaltechDATA  
 

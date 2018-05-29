@@ -1,6 +1,6 @@
 import dataset
 import requests
-from caltechdata_api import get_metadata
+from caltechdata_api import get_metadata, caltechdata_edit
 from datacite import DataCiteMDSClient, schema40
 import subprocess, os, datetime, sys
 
