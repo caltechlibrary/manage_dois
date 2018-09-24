@@ -119,7 +119,7 @@ for key in dataset.keys(collection):
             xml = schema40.tostring(metadata)
             d.metadata_post(xml)
             d.doi_post(identifier,inputv['url'])
-            print('Completed')
+            print('Completed '+identifier)
 
             token = os.environ['MAILTOK']
 
@@ -131,4 +131,4 @@ for key in dataset.keys(collection):
             
 
         else:
-            print("Web archiving is not complete for "+inputv['title'])
+            print("Web archiving is not complete for "+inputv['name'])
