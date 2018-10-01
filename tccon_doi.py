@@ -2,6 +2,7 @@
 # Requires xlsx2json[https://github.com/caltechlibrary/datatools]
 
 import os,argparse,json,datetime
+from datacite import schema40
 
 parser = argparse.ArgumentParser(description=\
         "Take info from a spreadsheet and turn it into DataCite metadata")
@@ -30,12 +31,12 @@ metadata = {}
 
 site_info = files['site'][1]
 
-alternative_identifiers =\
-[{"alternativeIdentifier":"GGG2014","alternativeIdentifierType":"Software_Version"},{"alternativeIdentifier":"R0","alternateIdentifierType":"Data_Revision"}]
-alternative_identifiers.append({"alternativeIdentifier":site_info[2],"alternativeIdentifierType":"id"})
-alternative_identifiers.append({"alternativeIdentifier":site_info[1],"alternativeIdentifierType":"longName"})
+alternate_identifiers =\
+[{"alternateIdentifier":"GGG2014","alternateIdentifierType":"Software_Version"},{"alternateIdentifier":"R0","alternateIdentifierType":"Data_Revision"}]
+alternate_identifiers.append({"alternateIdentifier":site_info[2],"alternateIdentifierType":"id"})
+alternate_identifiers.append({"alternateIdentifier":site_info[1],"alternateIdentifierType":"longName"})
 
-metadata['alternativeIdentifiers'] = alternative_identifiers
+metadata['alternateIdentifiers'] = alternate_identifiers
 
 contributors = [{
             "affiliations": [
@@ -58,6 +59,7 @@ line_n = 1
 line = files['contributors'][line_n]
 while line[0] != '':
     contributor = {}
+    contributor['contributorType'] = line[0]
     contributor['familyName'] = line[1]
     contributor['givenName'] = line[2]
     contributor['contributorName'] = line[1]+', '+line[2]
@@ -82,19 +84,19 @@ metadata['contributors'] = contributors
 creators = []
 line_n = 1
 line = files['creators'][line_n]
-while line[0] != '':
+while len(line) > 1:
     creator = {}
-    creator['familyName'] = line[1]
-    creator['givenName'] = line[2]
-    creator['creatorName'] = line[1]+', '+line[2]
+    creator['familyName'] = line[0]
+    creator['givenName'] = line[1]
+    creator['creatorName'] = line[0]+', '+line[1]
+    if line[2] != '':
+        creator['affiliations'] = [line[2]]
     if line[3] != '':
-        creator['affiliations'] = [line[3]]
-    if line[4] != '':
         creator['nameIdentifiers'] = [{
-        'nameIdentifier':line[4],'nameIdentifierScheme':'ORCID','schemeURI':'https://orcid.org'}]
-    if line[5] != '':
+        'nameIdentifier':line[3],'nameIdentifierScheme':'ORCID','schemeURI':'https://orcid.org'}]
+    if line[4] != '':
         identifier =\
-        {'nameIdentifier':line[5],'nameIdentifierScheme':'ResearcherID','schemeURI':'http://www.researcherid.com/rid/'}
+        {'nameIdentifier':line[4],'nameIdentifierScheme':'ResearcherID','schemeURI':'http://www.researcherid.com/rid/'}
         if 'nameIdentifiers' in contributor:
             creator['nameIdentifiers'].append(identifier)
         else:
@@ -102,15 +104,14 @@ while line[0] != '':
     creators.append(creator)
     line_n = line_n + 1
     line = files['creators'][line_n]
-
 metadata['creators'] = creators
 
-description_text = "The Total Carbon Column Observing Network (TCCON) is a
-network of ground-based Fourier Transform Spectrometers that record direct
-solar absorption spectra of the atmosphere in the near-infrared. From these
-spectra, accurate and precise column-averaged abundances of atmospheric
-constituents including CO2, CH4, N2O, HF, CO, H2O, and HDO, are retrieved. This
-data set contains observations from the TCCON station at "
+description_text = "The Total Carbon Column Observing Network (TCCON) is a\
+network of ground-based Fourier Transform Spectrometers that record direct\
+solar absorption spectra of the atmosphere in the near-infrared. From these\
+spectra, accurate and precise column-averaged abundances of atmospheric\
+constituents including CO2, CH4, N2O, HF, CO, H2O, and HDO, are retrieved.\
+This data set contains observations from the TCCON station at "
 
 metadata['descriptions'] = [{'description':description_text + \
         site_info[0]+'.','descriptionType':'Abstract'}]
@@ -121,11 +122,11 @@ funding = []
 
 line_n = 1
 line = files['funding_references'][line_n]
-while line[0] != '':
+while len(line) > 1:
     fund = {}
     fund['funderName'] = line[0]
     if line[1] != '':
-        fund['funderIdentifier'] =
+        fund['funderIdentifier'] =\
         {'funderIdentifierType':line[1],'funderIdentifier':line[2]}
     if line[3] != '':
         if line[4] != '':
@@ -135,18 +136,22 @@ while line[0] != '':
     if line[5] != '':
         fund['awardTitle'] = line[5]
     funding.append(fund)
+    line_n = line_n + 1
+    line = files['funding_references'][line_n]
 
 metadata['fundingReferences'] = funding
 
 metadata['geoLocations'] = [{'geoLocationPlace':site_info[3],\
-        'geoLocationPoint':{'pointLatitude':site_info[4],'pointLongitude':site_info[5]}}]
+        'geoLocationPoint':{'pointLatitude':float(site_info[4]),'pointLongitude':float(site_info[5])}}]
 
 metadata['identifier'] =\
         {'identifier':'10.14291/tccon.ggg2014.'+site_info[1]+'.R0','identifierType':'DOI'}
 
 metadata['language'] = 'en'
-metadata['publicationYear'] = datetime.datetime.now().year
+metadata['publicationYear'] = str(datetime.datetime.now().year)
 metadata['publisher'] = 'CaltechDATA'
+
+metadata['dates'] = [
 
 related = [{
             "relatedIdentifier": "https://tccondata.org/",
@@ -198,5 +203,13 @@ metadata['titles'] = [{'title':"TCCON data from "+site_info[0]+\
 
 metadata['version'] = 'GGG2014.R0'
 
+assert schema40.validate(metadata)
+#Debugging if this fails
+#v = schema40.validator.validate(metadata)
+#errors = sorted(v.iter_errors(instance), key=lambda e: e.path)
+#for error in errors:
+#    print(error.message)
 
-print(metadata)
+json = json.dumps(metadata)
+outfile = open('../'+site_info[1]+'.json','w')
+outfile.write(json)
