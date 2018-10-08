@@ -107,11 +107,11 @@ while len(line) > 1:
 metadata['creators'] = creators
 
 description_text = "The Total Carbon Column Observing Network (TCCON) is a\
-network of ground-based Fourier Transform Spectrometers that record direct\
-solar absorption spectra of the atmosphere in the near-infrared. From these\
-spectra, accurate and precise column-averaged abundances of atmospheric\
-constituents including CO2, CH4, N2O, HF, CO, H2O, and HDO, are retrieved.\
-This data set contains observations from the TCCON station at "
+ network of ground-based Fourier Transform Spectrometers that record direct\
+ solar absorption spectra of the atmosphere in the near-infrared. From these\
+ spectra, accurate and precise column-averaged abundances of atmospheric\
+ constituents including CO2, CH4, N2O, HF, CO, H2O, and HDO, are retrieved.\
+ This data set contains observations from the TCCON station at "
 
 metadata['descriptions'] = [{'description':description_text + \
         site_info[0]+'.','descriptionType':'Abstract'}]
@@ -151,8 +151,6 @@ metadata['language'] = 'en'
 metadata['publicationYear'] = str(datetime.datetime.now().year)
 metadata['publisher'] = 'CaltechDATA'
 
-metadata['dates'] = [
-
 related = [{
             "relatedIdentifier": "https://tccondata.org/",
             "relatedIdentifierType": "URL",
@@ -187,6 +185,8 @@ while line[2] != '':
     rel['relatedIdentifierType'] = line[1]
     rel['relationType'] = line[0]
     related.append(rel)
+    line_n = line_n + 1
+    line = files['related_identifier'][line_n]
 
 metadata['relatedIdentifiers'] = related
 
@@ -203,12 +203,14 @@ metadata['titles'] = [{'title':"TCCON data from "+site_info[0]+\
 
 metadata['version'] = 'GGG2014.R0'
 
-assert schema40.validate(metadata)
+result =  schema40.validate(metadata)
 #Debugging if this fails
-#v = schema40.validator.validate(metadata)
-#errors = sorted(v.iter_errors(instance), key=lambda e: e.path)
-#for error in errors:
-#    print(error.message)
+if result == False:
+    v = schema40.validator.validate(metadata)
+    errors = sorted(v.iter_errors(instance), key=lambda e: e.path)
+    for error in errors:
+        print(error.message)
+    exit()
 
 json = json.dumps(metadata)
 outfile = open('../'+site_info[1]+'.json','w')
