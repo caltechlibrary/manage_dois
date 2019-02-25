@@ -17,7 +17,7 @@ Set your DataCite password by making a file 'pw' under the directory 'data'
 ## TCCON New Site Release
 
 - Get a .xlsx metadata template (TCCON_Metadata_Template.xlsx) completed by the site PI.
-  Type `python tccon_doi template.xlsx` to generate a .json metadata file.
+  Type `python tccon_doi.py template.xlsx` to generate a .json metadata file.
   Transfer to TCCON server. Make sure the site has a web site (e.g.
   https://tccon-wiki.caltech.edu/Sites/Hefei) and add to
   create_readme_contents_tccon-data. Type ./run_new_site hf 
