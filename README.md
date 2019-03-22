@@ -6,9 +6,6 @@ Requires:
 
 Python 3 (Recommended via [Anaconda](https://www.anaconda.com/download)) with [requests](https://pypi.python.org/pypi/requests) library and [Dataset](https://github.com/caltechlibrary/dataset).
 
-base32-url from DataCite.  You can install this ruby gem on a modern Mac by
-typing 'sudo gem install -n /usr/local/bin base32-url'
-
 Set your DataCite password by making a file 'pw' under the directory 'data'
 
 ## DOIs for Web Sites
@@ -20,7 +17,7 @@ Set your DataCite password by making a file 'pw' under the directory 'data'
 ## TCCON New Site Release
 
 - Get a .xlsx metadata template (TCCON_Metadata_Template.xlsx) completed by the site PI.
-  Type `python tccon_doi template.xlsx` to generate a .json metadata file.
+  Type `python tccon_doi.py template.xlsx` to generate a .json metadata file.
   Transfer to TCCON server. Make sure the site has a web site (e.g.
   https://tccon-wiki.caltech.edu/Sites/Hefei) and add to
   create_readme_contents_tccon-data. Type ./run_new_site hf 
