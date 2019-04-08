@@ -59,23 +59,28 @@ line_n = 1
 line = files['contributors'][line_n]
 while line[0] != '':
     contributor = {}
-    contributor['contributorType'] = line[0]
-    contributor['familyName'] = line[1]
-    contributor['givenName'] = line[2]
-    contributor['contributorName'] = line[1]+', '+line[2]
-    if line[3] != '':
-        contributor['affiliations'] = [line[3]]
-    if line[4] != '':
-        contributor['nameIdentifiers'] = [{
+    if line[0] != '':
+        contributor['contributorType'] = line[0]
+        if line[1] != '' and line[2] != '':
+            contributor['familyName'] = line[1]
+            contributor['givenName'] = line[2]
+            contributor['contributorName'] = line[1]+', '+line[2]
+        if line[1] != '' and line[2] == '':
+            #Just something in the family name field means this is a single value "Org name"
+            contributor['contributorName'] = line[1]
+        if line[3] != '':
+            contributor['affiliations'] = [line[3]]
+        if line[4] != '':
+            contributor['nameIdentifiers'] = [{
         'nameIdentifier':line[4],'nameIdentifierScheme':'ORCID','schemeURI':'https://orcid.org'}]
-    if line[5] != '':
-        identifier =\
-        {'nameIdentifier':line[5],'nameIdentifierScheme':'ResearcherID','schemeURI':'http://www.researcherid.com/rid/'}
-        if 'nameIdentifiers' in contributor:
-            contributor['nameIdentifiers'].append(identifier)
-        else:
-            contributor['nameIdentifiers'] = [identifier]
-    contributors.append(contributor)
+        if line[5] != '':
+            identifier =\
+            {'nameIdentifier':line[5],'nameIdentifierScheme':'ResearcherID','schemeURI':'http://www.researcherid.com/rid/'}
+            if 'nameIdentifiers' in contributor:
+                contributor['nameIdentifiers'].append(identifier)
+            else:
+                contributor['nameIdentifiers'] = [identifier]
+        contributors.append(contributor)
     line_n = line_n + 1
     line = files['contributors'][line_n]
 
@@ -88,20 +93,21 @@ while len(line) > 1:
     creator = {}
     creator['familyName'] = line[0]
     creator['givenName'] = line[1]
-    creator['creatorName'] = line[0]+', '+line[1]
-    if line[2] != '':
-        creator['affiliations'] = [line[2]]
-    if line[3] != '':
-        creator['nameIdentifiers'] = [{
-        'nameIdentifier':line[3],'nameIdentifierScheme':'ORCID','schemeURI':'https://orcid.org'}]
-    if line[4] != '':
-        identifier =\
-        {'nameIdentifier':line[4],'nameIdentifierScheme':'ResearcherID','schemeURI':'http://www.researcherid.com/rid/'}
-        if 'nameIdentifiers' in contributor:
-            creator['nameIdentifiers'].append(identifier)
-        else:
-            creator['nameIdentifiers'] = [identifier]
-    creators.append(creator)
+    if creator['familyName']  != '':
+        creator['creatorName'] = line[0]+', '+line[1]
+        if line[2] != '':
+            creator['affiliations'] = [line[2]]
+        if line[3] != '':
+            creator['nameIdentifiers'] = [{
+            'nameIdentifier':line[3],'nameIdentifierScheme':'ORCID','schemeURI':'https://orcid.org'}]
+        if line[4] != '':
+            identifier =\
+            {'nameIdentifier':line[4],'nameIdentifierScheme':'ResearcherID','schemeURI':'http://www.researcherid.com/rid/'}
+            if 'nameIdentifiers' in contributor:
+                creator['nameIdentifiers'].append(identifier)
+            else:
+                creator['nameIdentifiers'] = [identifier]
+        creators.append(creator)
     line_n = line_n + 1
     line = files['creators'][line_n]
 metadata['creators'] = creators
@@ -125,17 +131,18 @@ line = files['funding_references'][line_n]
 while len(line) > 1:
     fund = {}
     fund['funderName'] = line[0]
-    if line[1] != '':
-        fund['funderIdentifier'] =\
-        {'funderIdentifierType':line[1],'funderIdentifier':line[2]}
-    if line[3] != '':
-        if line[4] != '':
-            fund['awardNumber']={'awardNumber':line[3],'awardURI':line[4]}
-        else:
-            fund['awardNumber']={'awardNumber':line[3]}
-    if line[5] != '':
-        fund['awardTitle'] = line[5]
-    funding.append(fund)
+    if fund['funderName'] != '':
+        if line[1] != '':
+            fund['funderIdentifier'] =\
+            {'funderIdentifierType':line[1],'funderIdentifier':line[2]}
+        if line[3] != '':
+            if line[4] != '':
+                fund['awardNumber']={'awardNumber':line[3],'awardURI':line[4]}
+            else:
+                fund['awardNumber']={'awardNumber':line[3]}
+        if line[5] != '':
+            fund['awardTitle'] = line[5]
+        funding.append(fund)
     line_n = line_n + 1
     line = files['funding_references'][line_n]
 
