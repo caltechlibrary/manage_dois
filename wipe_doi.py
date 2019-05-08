@@ -10,7 +10,7 @@ def update_doi(doi,metadata,url=''):
 
     # Initialize the MDS client.
     d = DataCiteMDSClient(
-        username='TIND.CALTECH',
+        username='CALTECH.LIBRARY',
         password=password,
         prefix=prefix,
         url='https://mds.datacite.org'
@@ -37,7 +37,7 @@ def update_doi(doi,metadata,url=''):
 if __name__ == "__main__":
     with open('blank.json') as f:
         metadata = json.load(f)
-    dois = [line.rstrip('\n') for line in open('dois.txt')]
+    dois = [line.rstrip('\n') for line in open('wipe_dois.txt')]
     for doi in dois:        
         print(doi)
         update_doi(doi,metadata)#,'https://library.caltech.edu/dois')
