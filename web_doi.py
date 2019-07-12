@@ -1,4 +1,4 @@
-import dataset
+from py_dataset import dataset
 import requests
 from datacite import DataCiteMDSClient, schema40
 import subprocess, os, datetime
@@ -46,38 +46,51 @@ if os.path.isdir(collection) == False:
 client_secret = '/etc/client_secret.json'
 sheet_id = '1A4XTcfcq5usHw-hKHoWTADwMAJAWM7sdha93wvLs6rM'
 sheet_name = 'Form Responses 1'
-cell_range = 'A1:Z'
+cell_range = 'A2:Z'
 
 archive_path = 'https://wayback.archive-it.org/9060/'
 
-err= dataset.import_gsheet(collection,client_secret,sheet_id,
-        sheet_name,cell_range,id_col=1, overwrite=True)
+err = dataset.import_gsheet(collection,sheet_id,
+        sheet_name,1,cell_range,overwrite=True)
+if err != '':
+    print(f"Unexpected error on importing gsheet to {collection}, {err}")
+    exit()
 
-for key in dataset.keys(collection):
+keys = dataset.keys(collection)
+
+for key in keys:
     inputv,err = dataset.read(collection,key)
     if err != "":
-        t.error(f"Unexpected error for {key} in {collection_name}, {err}")
+        print(f"Unexpected error for {key} in {collection}, {err}")
+        exit()
     #If we haven't assigned a doi for this resource before
-    if inputv['doi'] == '':
+    if 'doi' not in inputv:
         #Confirm that archiving is successful
-        if inputv['complete'] == 'Yes':
-            metadata = {}
-            metadata['titles'] = [{'title':inputv['name']}]
-            authors = []
-            alist = inputv['author'].split(';')
-            aff_list = inputv['affiliation'].split(';')
-            orcid_list = inputv['orcid'].split(';')
-            for aindex in range(len(alist)):
-                author = {}
-                author['creatorName'] = alist[aindex].strip()
-                if len(aff_list) > aindex:
-                    author['affiliations'] = [aff_list[aindex].strip()]
-                if len(orcid_list) > aindex:
-                    author['nameIdentifiers'] = [{'nameIdentifier':
+        if 'archive_complete' in inputv:
+            if inputv['archive_complete'] == 'Yes':
+                metadata = {}
+                metadata['titles'] = [{'title':inputv['title']}]
+                authors = []
+                alist = inputv['author'].split(';')
+                if 'affiliation' in inputv:
+                    aff_list = inputv['affiliation'].split(';')
+                else:
+                    aff_list = []
+                if 'orcid' in inputv:
+                    orcid_list = inputv['orcid'].split(';')
+                else:
+                    orcid = []
+                for aindex in range(len(alist)):
+                    author = {}
+                    author['creatorName'] = alist[aindex].strip()
+                    if len(aff_list) > aindex:
+                        author['affiliations'] = [aff_list[aindex].strip()]
+                    if len(orcid_list) > aindex:
+                        author['nameIdentifiers'] = [{'nameIdentifier':
                         orcid_list[aindex].strip(),'nameIdentifierScheme':'ORCID'}]
-                authors.append(author)
+                    authors.append(author)
             metadata['creators'] = authors
-            if inputv['license'] != '':
+            if 'license' in inputv:
                 metadata['rightsList'] = [{'rights':inputv['license']}]
             metadata['relatedIdentifiers']=[{"relatedIdentifier":inputv['url'],
                     'relatedIdentifierType':'URL','relationType':'IsIdenticalTo'},
@@ -101,25 +114,26 @@ for key in dataset.keys(collection):
             username='CALTECH.LIBRARY',
             password=password,
             prefix=prefix,
-            #test_mode=True
             )
 
-            doi_end =subprocess.check_output(['../gen-cool-doi'],universal_newlines=True)
-            identifier = str(prefix)+'/'+str(doi_end)
+            identifier = str(prefix)
 
             metadata['identifier'] = {'identifier':identifier,'identifierType':'DOI'}
 
-            assert schema40.validate(metadata)
+            #assert schema40.validate(metadata)
             #Debugging if this fails
             #v = schema40.validator.validate(metadata)
             #errors = sorted(v.iter_errors(instance), key=lambda e: e.path)
             #for error in errors:
             #    print(error.message)
-
             xml = schema40.tostring(metadata)
-            d.metadata_post(xml)
+            result = d.metadata_post(xml)
+            identifier = result.split('(')[1].split(')')[0]
             d.doi_post(identifier,inputv['url'])
             print('Completed '+identifier)
+
+            inputv['doi'] = identifier
+            err = dataset.update(collection,key,inputv)
 
             token = os.environ['MAILTOK']
 
@@ -127,8 +141,19 @@ for key in dataset.keys(collection):
             url = inputv['url']
 
             send_simple_message(token,email,identifier,url)
- 
-            
 
         else:
             print("Web archiving is not complete for "+inputv['name'])
+
+dot_exprs =\
+['.email','.doi','.title','.author','.affiliation','.orcid','.license','.prefix','.archive_complete','.doi']
+column_names = ['email','doi','title','author','affiliation','orcid','license','prefix','archive_complete','doi']
+frame_name = 'export'
+
+if dataset.has_frame(collection, frame_name):
+    dataset.delete_frame(collection, frame_name)
+(f1, err) = dataset.frame(collection, frame_name, keys, dot_exprs, column_names)
+
+err = dataset.export_gsheet(collection, frame_name, sheet_id, sheet_name, cell_range)
+if err != '':
+    print("Failed, count not export-gsheet in", collection_name, ', ', err)
