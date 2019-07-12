@@ -146,14 +146,15 @@ for key in keys:
             print("Web archiving is not complete for "+inputv['name'])
 
 dot_exprs =\
-['.email','.doi','.title','.author','.affiliation','.orcid','.license','.prefix','.archive_complete','.doi']
-column_names = ['email','doi','title','author','affiliation','orcid','license','prefix','archive_complete','doi']
+['.email','.url','.title','.author','.affiliation','.orcid','.license','.prefix','.archive_complete','.doi']
+column_names = ['email','url','title','author','affiliation','orcid','license','prefix','archive_complete','doi']
 frame_name = 'export'
 
 if dataset.has_frame(collection, frame_name):
     dataset.delete_frame(collection, frame_name)
 (f1, err) = dataset.frame(collection, frame_name, keys, dot_exprs, column_names)
 
-err = dataset.export_gsheet(collection, frame_name, sheet_id, sheet_name, cell_range)
+err =  dataset.sync_send_gsheet(collection, frame_name, sheet_id, sheet_name,
+        cell_range, overwrite = False)
 if err != '':
     print("Failed, count not export-gsheet in", collection_name, ', ', err)
