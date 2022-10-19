@@ -22,3 +22,20 @@ Set your DataCite password by making a file 'pw' under the directory 'data'
   https://tccon-wiki.caltech.edu/Sites/Hefei) and add to
   create_readme_contents_tccon-data. Type ./run_new_site hf 
 
+## Local Cool DOI Creation
+
+You need some ruby dependencies installed. On a mac type :
+
+`sudo gem install base32-url`
+`sudo gem install securerandom`
+
+Then you can generate the DOI suffix with:
+
+`./gen-cool-doi`
+
+or in python
+
+`suffix = subprocess.check_output(['./gen-cool-doi'],universal_newlines=True)`
+
+
+
